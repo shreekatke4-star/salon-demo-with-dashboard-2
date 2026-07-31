@@ -1,0 +1,15 @@
+# Editor folders
+.vscode/
+.sixth/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Old file (replaced by index.html)
+index.htm
+
+# Misc
+*.log
+picsum_lines.txt

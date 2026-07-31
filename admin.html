@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Glamour Studio Salon</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconify -->
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <!-- Firebase App Manager -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        serif: ['Cormorant Garamond', 'serif']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#FAF5F4',
+                            100: '#F4ECE9',
+                            500: '#9F544A',
+                            600: '#87433B',
+                            700: '#5A3735',
+                            900: '#3A2626'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="h-full font-sans antialiased overflow-x-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- ============================================================ -->
+    <!-- 🔑 LOGIN SCREEN -->
+    <!-- ============================================================ -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-4 transition-opacity duration-300">
+        <div class="glass-card w-full max-w-md rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+            <!-- Background Glow -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-500 mb-3">
+                    <span class="iconify text-3xl" data-icon="heroicons:scissors"></span>
+                </div>
+                <h1 class="font-serif text-3xl font-bold text-white tracking-wide">Glamour Studio</h1>
+                <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-medium">Salon Admin Management</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4" onsubmit="handleAdminLogin(event)">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
+                    <div class="relative">
+                        <span class="iconify absolute left-3.5 top-3 text-slate-400 text-lg" data-icon="heroicons:envelope"></span>
+                        <input type="email" id="loginEmail" required value="admin@glamourstudio.com" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Password</label>
+                    <div class="relative">
+                        <span class="iconify absolute left-3.5 top-3 text-slate-400 text-lg" data-icon="heroicons:lock-closed"></span>
+                        <input type="password" id="loginPassword" required value="admin123" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition">
+                    </div>
+                </div>
+
+                <div id="loginError" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg p-2.5 text-center"></div>
+
+                <button type="submit" id="loginBtn" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition flex items-center justify-center space-x-2 group">
+                    <span>Sign In to Dashboard</span>
+                    <span class="iconify text-lg group-hover:translate-x-1 transition-transform" data-icon="heroicons:arrow-right"></span>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-xs text-slate-500 pt-4 border-t border-slate-800/60">
+                <p>💡 Demo Mode Access: Pre-filled credentials work out of the box!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 📊 MAIN ADMIN DASHBOARD LAYOUT -->
+    <!-- ============================================================ -->
+    <div id="dashboardApp" class="hidden min-h-screen flex flex-col md:flex-row">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-800/80 flex flex-col shrink-0">
+            <!-- Brand header -->
+            <div class="p-5 flex items-center justify-between border-b border-slate-800/60">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/20 border border-brand-500/40 text-brand-500 flex items-center justify-center font-bold">
+                        <span class="iconify text-xl" data-icon="heroicons:scissors"></span>
+                    </div>
+                    <div>
+                        <h2 class="font-serif font-bold text-lg leading-tight text-white">Glamour Studio</h2>
+                        <span class="text-[10px] uppercase font-semibold tracking-wider text-brand-500">Admin Control</span>
+                    </div>
+                </div>
+                <a href="index.html" target="_blank" title="View Public Website" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+                    <span class="iconify text-xl" data-icon="heroicons:arrow-top-right-on-square"></span>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-brand-500 bg-brand-500/10 border border-brand-500/20">
+                    <span class="iconify text-lg" data-icon="heroicons:squares-2x2"></span>
+                    <span>Dashboard Overview</span>
+                </button>
+                <button onclick="switchTab('appointments')" id="nav-appointments" class="nav-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+                    <div class="flex items-center space-x-3">
+                        <span class="iconify text-lg" data-icon="heroicons:calendar-days"></span>
+                        <span>Appointments</span>
+                    </div>
+                    <span id="badgePendingCount" class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">0</span>
+                </button>
+                <button onclick="switchTab('services')" id="nav-services" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+                    <span class="iconify text-lg" data-icon="heroicons:sparkles"></span>
+                    <span>Services & Pricing</span>
+                </button>
+                <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+                    <span class="iconify text-lg" data-icon="heroicons:users"></span>
+                    <span>Customer CRM</span>
+                </button>
+                <button onclick="switchTab('firebase')" id="nav-firebase" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+                    <span class="iconify text-lg" data-icon="heroicons:cog-6-tooth"></span>
+                    <span>Firebase Settings</span>
+                </button>
+            </nav>
+
+            <!-- Bottom User & Sync Status -->
+            <div class="p-4 border-t border-slate-800/60 bg-slate-900/40">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <span id="syncDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span id="syncText" class="text-xs text-slate-400 font-medium">Demo Mode</span>
+                    </div>
+                    <button onclick="openWalkInModal()" class="text-xs bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 border border-brand-500/30 px-2 py-1 rounded-md font-semibold transition">
+                        + New Booking
+                    </button>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-800/40">
+                    <div class="flex items-center space-x-2.5 truncate">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-300">
+                            SA
+                        </div>
+                        <div class="truncate">
+                            <p id="adminUserEmail" class="text-xs font-medium text-slate-200 truncate">Admin Manager</p>
+                            <p class="text-[10px] text-slate-500">Salon Admin</p>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" title="Logout" class="text-slate-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800 transition">
+                        <span class="iconify text-lg" data-icon="heroicons:arrow-right-on-rectangle"></span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Viewport -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-8 bg-slate-900">
+
+            <!-- Top Welcome Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+                <div>
+                    <h1 id="viewTitle" class="font-serif text-2xl md:text-3xl font-bold text-white">Dashboard Overview</h1>
+                    <p class="text-xs text-slate-400 mt-1">Real-time salon operations, appointments, and client analytics.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openWalkInModal()" class="bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs md:text-sm px-4 py-2.5 rounded-xl shadow-lg transition flex items-center space-x-2">
+                        <span class="iconify text-lg" data-icon="heroicons:plus-circle"></span>
+                        <span>Add Walk-In Appointment</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 1: OVERVIEW -->
+            <!-- ============================================================ -->
+            <div id="tab-overview" class="tab-content space-y-8">
+                <!-- KPI Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Bookings</span>
+                            <span class="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                <span class="iconify text-xl" data-icon="heroicons:calendar-days"></span>
+                            </span>
+                        </div>
+                        <p id="kpiTotal" class="text-3xl font-bold text-white mt-3">0</p>
+                        <p class="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
+                            <span class="text-emerald-400 font-semibold">+100%</span>
+                            <span>live sync</span>
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Confirmation</span>
+                            <span class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span class="iconify text-xl" data-icon="heroicons:clock"></span>
+                            </span>
+                        </div>
+                        <p id="kpiPending" class="text-3xl font-bold text-amber-400 mt-3">0</p>
+                        <p class="text-[11px] text-slate-400 mt-2">Requires salon response</p>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Confirmed Appointments</span>
+                            <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="iconify text-xl" data-icon="heroicons:check-circle"></span>
+                            </span>
+                        </div>
+                        <p id="kpiConfirmed" class="text-3xl font-bold text-emerald-400 mt-3">0</p>
+                        <p class="text-[11px] text-slate-400 mt-2">Scheduled & Ready</p>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Estimated Revenue</span>
+                            <span class="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                <span class="iconify text-xl" data-icon="heroicons:banknotes"></span>
+                            </span>
+                        </div>
+                        <p id="kpiRevenue" class="text-3xl font-bold text-white mt-3">₹0</p>
+                        <p class="text-[11px] text-slate-400 mt-2">From confirmed/completed bookings</p>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-2 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-serif font-bold text-lg text-white">Appointments by Service Category</h3>
+                            <span class="text-xs text-slate-400">Popularity Distribution</span>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="servicesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-serif font-bold text-lg text-white">Booking Status Breakdown</h3>
+                            <span class="text-xs text-slate-400">Live Breakdown</span>
+                        </div>
+                        <div class="h-64 flex items-center justify-center">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Preview Table -->
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+                        <h3 class="font-serif font-bold text-lg text-white">Recent Incoming Bookings</h3>
+                        <button onclick="switchTab('appointments')" class="text-xs text-brand-400 hover:text-brand-300 font-semibold transition">View All →</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-800/50 text-slate-400 uppercase text-[11px] font-semibold tracking-wider">
+                                <tr>
+                                    <th class="px-5 py-3">Client</th>
+                                    <th class="px-5 py-3">Service</th>
+                                    <th class="px-5 py-3">Date & Time</th>
+                                    <th class="px-5 py-3">Status</th>
+                                    <th class="px-5 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentAppointmentsBody" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="5" class="px-5 py-8 text-center text-slate-500 text-xs">Loading appointments...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 2: APPOINTMENTS HUB -->
+            <!-- ============================================================ -->
+            <div id="tab-appointments" class="tab-content hidden space-y-6">
+                <!-- Controls & Filters -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <span class="iconify absolute left-3.5 top-3 text-slate-400 text-lg" data-icon="heroicons:magnifying-glass"></span>
+                        <input type="text" id="aptSearchInput" oninput="renderAppointmentsTable()" placeholder="Search by customer name, phone, or service..." class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+                    </div>
+                    
+                    <!-- Filter Pills -->
+                    <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 md:pb-0 text-xs font-semibold">
+                        <button onclick="setAptFilter('All')" id="filter-All" class="filter-pill px-3 py-2 rounded-xl bg-brand-500 text-white">All</button>
+                        <button onclick="setAptFilter('Pending')" id="filter-Pending" class="filter-pill px-3 py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">Pending</button>
+                        <button onclick="setAptFilter('Confirmed')" id="filter-Confirmed" class="filter-pill px-3 py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">Confirmed</button>
+                        <button onclick="setAptFilter('Completed')" id="filter-Completed" class="filter-pill px-3 py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">Completed</button>
+                        <button onclick="setAptFilter('Cancelled')" id="filter-Cancelled" class="filter-pill px-3 py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">Cancelled</button>
+                    </div>
+                </div>
+
+                <!-- Full Appointments Table -->
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-800/80 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-700/60">
+                                <tr>
+                                    <th class="px-5 py-3.5">Client & Contact</th>
+                                    <th class="px-5 py-3.5">Service Requested</th>
+                                    <th class="px-5 py-3.5">Appointment Time</th>
+                                    <th class="px-5 py-3.5">Status</th>
+                                    <th class="px-5 py-3.5">Est. Price</th>
+                                    <th class="px-5 py-3.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullAppointmentsBody" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="6" class="px-5 py-12 text-center text-slate-500">Loading appointments list...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 3: SERVICES & PRICING -->
+            <!-- ============================================================ -->
+            <div id="tab-services" class="tab-content hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-serif font-bold text-xl text-white">Salon Services Catalog</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Manage pricing, estimated duration, and active menu items.</p>
+                    </div>
+                    <button onclick="openServiceEditModal()" class="bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 border border-brand-500/30 px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5">
+                        <span class="iconify text-base" data-icon="heroicons:plus"></span>
+                        <span>Add New Service</span>
+                    </button>
+                </div>
+
+                <div id="servicesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Services dynamically loaded here -->
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 4: CUSTOMERS CRM -->
+            <!-- ============================================================ -->
+            <div id="tab-customers" class="tab-content hidden space-y-6">
+                <div class="glass-card p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-serif font-bold text-xl text-white">Client Contacts & History</h3>
+                        <span class="text-xs text-slate-400">Total Unique Clients: <strong id="crmCount" class="text-brand-400">0</strong></span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-800/80 text-slate-400 uppercase text-[11px] font-semibold tracking-wider">
+                                <tr>
+                                    <th class="px-5 py-3">Client Name</th>
+                                    <th class="px-5 py-3">Phone Number</th>
+                                    <th class="px-5 py-3">Email Address</th>
+                                    <th class="px-5 py-3">Total Visits</th>
+                                    <th class="px-5 py-3 text-right">Quick Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crmBody" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="5" class="px-5 py-8 text-center text-slate-500">Loading client directory...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 5: FIREBASE SETTINGS -->
+            <!-- ============================================================ -->
+            <div id="tab-firebase" class="tab-content hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl max-w-2xl space-y-6">
+                    <div class="flex items-start justify-between border-b border-slate-800 pb-4">
+                        <div>
+                            <h3 class="font-serif font-bold text-xl text-white">Firebase Project Credentials</h3>
+                            <p class="text-xs text-slate-400 mt-1">Connect your live Firebase Console project to enable real-time cloud Firestore syncing.</p>
+                        </div>
+                        <span id="firebaseConnectionBadge" class="px-3 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Demo Mode Active</span>
+                    </div>
+
+                    <form onsubmit="handleSaveFirebaseConfig(event)" class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-300 mb-1">API Key</label>
+                            <input type="text" id="cfgApiKey" required placeholder="AIzaSy..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-brand-500">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Auth Domain</label>
+                                <input type="text" id="cfgAuthDomain" required placeholder="your-project.firebaseapp.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Project ID</label>
+                                <input type="text" id="cfgProjectId" required placeholder="your-project-id" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-brand-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Storage Bucket</label>
+                                <input type="text" id="cfgStorageBucket" placeholder="your-project.appspot.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">App ID</label>
+                                <input type="text" id="cfgAppId" placeholder="1:123456789:web:abcdef..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-brand-500">
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex items-center justify-between border-t border-slate-800">
+                            <button type="button" onclick="handleClearFirebaseConfig()" class="text-red-400 hover:text-red-300 font-semibold">Reset to Demo Mode</button>
+                            <button type="submit" class="bg-brand-500 hover:bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl shadow transition">Save & Connect Firebase</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL 1: ADD WALK-IN APPOINTMENT -->
+    <!-- ============================================================ -->
+    <div id="walkInModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+        <div class="glass-card w-full max-w-lg rounded-2xl p-6 shadow-2xl relative space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-serif font-bold text-xl text-white">Add Walk-In / Phone Booking</h3>
+                <button onclick="closeWalkInModal()" class="text-slate-400 hover:text-white p-1">
+                    <span class="iconify text-xl" data-icon="heroicons:x-mark"></span>
+                </button>
+            </div>
+            
+            <form onsubmit="handleCreateWalkIn(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Client Full Name *</label>
+                    <input type="text" id="walkInName" required placeholder="e.g. Meera Kapoor" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Phone Number *</label>
+                        <input type="tel" id="walkInPhone" required placeholder="+91 98765 43210" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Email (Optional)</label>
+                        <input type="email" id="walkInEmail" placeholder="client@gmail.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Select Service *</label>
+                        <select id="walkInService" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                            <!-- Filled dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Date & Time *</label>
+                        <input type="datetime-local" id="walkInDateTime" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Notes / Instructions</label>
+                    <textarea id="walkInMessage" rows="2" placeholder="Special requirements or preferences..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500"></textarea>
+                </div>
+                
+                <div class="pt-3 flex justify-end space-x-2 border-t border-slate-800">
+                    <button type="button" onclick="closeWalkInModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold shadow">Save Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL 2: EDIT SERVICE PRICING -->
+    <!-- ============================================================ -->
+    <div id="serviceEditModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+        <div class="glass-card w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 id="serviceModalHeader" class="font-serif font-bold text-xl text-white">Edit Service</h3>
+                <button onclick="closeServiceEditModal()" class="text-slate-400 hover:text-white p-1">
+                    <span class="iconify text-xl" data-icon="heroicons:x-mark"></span>
+                </button>
+            </div>
+
+            <form onsubmit="handleSaveService(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editServiceId">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Service Title *</label>
+                    <input type="text" id="editServiceTitle" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Price (₹) *</label>
+                        <input type="number" id="editServicePrice" required min="0" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Category *</label>
+                        <select id="editServiceCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                            <option value="Hair">Hair</option>
+                            <option value="Skin">Skin</option>
+                            <option value="Makeup">Makeup</option>
+                            <option value="Nails">Nails</option>
+                            <option value="Body">Body</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Estimated Duration</label>
+                    <input type="text" id="editServiceDuration" placeholder="e.g. 45-60 min" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-2 border-t border-slate-800">
+                    <button type="button" onclick="closeServiceEditModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold shadow">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="adminToast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="glass-card border-brand-500/40 bg-slate-900/90 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3">
+            <span class="iconify text-2xl text-emerald-400" data-icon="heroicons:check-circle"></span>
+            <div>
+                <p id="toastTitle" class="text-xs font-bold text-white">Action Completed</p>
+                <p id="toastSubtitle" class="text-[11px] text-slate-400">Database updated successfully.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ⚡ DASHBOARD APPLICATION SCRIPT -->
+    <!-- ============================================================ -->
+    <script>
+        let allAppointments = [];
+        let allServices = [];
+        let currentFilter = 'All';
+        let servicesChartInst = null;
+        let statusChartInst = null;
+
+        // Initialize App State
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            loadFirebaseSettingsForm();
+        });
+
+        // Auth Check
+        function checkAuthStatus() {
+            const user = window.SalonFirebase.getCurrentUser();
+            if (user) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardApp').classList.remove('hidden');
+                document.getElementById('adminUserEmail').textContent = user.email || 'Salon Manager';
+                
+                updateSyncBadge();
+                initRealtimeSubscription();
+                loadServicesCatalog();
+            } else {
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('dashboardApp').classList.add('hidden');
+            }
+        }
+
+        // Login Handler
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+            const errDiv = document.getElementById('loginError');
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="iconify text-lg animate-spin" data-icon="heroicons:arrow-path"></span> Logging in...`;
+            errDiv.classList.add('hidden');
+
+            const res = await window.SalonFirebase.loginAdmin(email, password);
+            if (res.success) {
+                checkAuthStatus();
+                showToast('Welcome Back!', `Signed in as ${res.user.email}`);
+            } else {
+                errDiv.textContent = res.error || 'Login failed. Please check your credentials.';
+                errDiv.classList.remove('hidden');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `<span>Sign In to Dashboard</span><span class="iconify text-lg" data-icon="heroicons:arrow-right"></span>`;
+        }
+
+        // Logout Handler
+        async function handleLogout() {
+            await window.SalonFirebase.logoutAdmin();
+            checkAuthStatus();
+        }
+
+        // Sync Status Indicator
+        function updateSyncBadge() {
+            const isReady = window.SalonFirebase.isFirebaseReady;
+            const dot = document.getElementById('syncDot');
+            const txt = document.getElementById('syncText');
+            const badge = document.getElementById('firebaseConnectionBadge');
+
+            if (isReady) {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+                txt.textContent = 'Firebase Cloud Sync Active';
+                if (badge) {
+                    badge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                    badge.textContent = 'Firebase Cloud Connected';
+                }
+            } else {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+                txt.textContent = 'Demo Mode (LocalStorage)';
+                if (badge) {
+                    badge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                    badge.textContent = 'Demo Mode (No API Keys)';
+                }
+            }
+        }
+
+        // Realtime Subscription
+        function initRealtimeSubscription() {
+            window.SalonFirebase.subscribeAppointments((list) => {
+                allAppointments = list;
+                updateDashboardKPIs();
+                renderRecentAppointments();
+                renderAppointmentsTable();
+                renderCRMTable();
+                updateCharts();
+            });
+        }
+
+        // Update KPIs
+        function updateDashboardKPIs() {
+            const total = allAppointments.length;
+            const pending = allAppointments.filter(a => a.status === 'Pending').length;
+            const confirmed = allAppointments.filter(a => a.status === 'Confirmed').length;
+            
+            // Revenue calculation
+            const revenue = allAppointments
+                .filter(a => a.status === 'Confirmed' || a.status === 'Completed')
+                .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiPending').textContent = pending;
+            document.getElementById('kpiConfirmed').textContent = confirmed;
+            document.getElementById('kpiRevenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
+            document.getElementById('badgePendingCount').textContent = pending;
+        }
+
+        // Render Recent Table (Overview)
+        function renderRecentAppointments() {
+            const body = document.getElementById('recentAppointmentsBody');
+            const recent = allAppointments.slice(0, 5);
+
+            if (recent.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-slate-500 text-xs">No appointments logged yet.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = recent.map(apt => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="px-5 py-3 font-medium text-white">
+                        <div>${escapeHtml(apt.from_name)}</div>
+                        <div class="text-[11px] text-slate-400">${escapeHtml(apt.from_phone)}</div>
+                    </td>
+                    <td class="px-5 py-3 text-slate-300">${escapeHtml(apt.service)}</td>
+                    <td class="px-5 py-3 text-slate-400 text-xs">${formatDate(apt.datetime)}</td>
+                    <td class="px-5 py-3">${getStatusBadge(apt.status)}</td>
+                    <td class="px-5 py-3 text-right">
+                        <button onclick="switchTab('appointments')" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800">Manage</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter and Render Appointments Hub Table
+        function renderAppointmentsTable() {
+            const body = document.getElementById('fullAppointmentsBody');
+            const search = (document.getElementById('aptSearchInput').value || '').toLowerCase();
+
+            let filtered = allAppointments;
+
+            if (currentFilter !== 'All') {
+                filtered = filtered.filter(a => a.status === currentFilter);
+            }
+
+            if (search) {
+                filtered = filtered.filter(a => 
+                    (a.from_name && a.from_name.toLowerCase().includes(search)) ||
+                    (a.from_phone && a.from_phone.toLowerCase().includes(search)) ||
+                    (a.service && a.service.toLowerCase().includes(search))
+                );
+            }
+
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500">No appointments matching filters.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = filtered.map(apt => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="px-5 py-4">
+                        <div class="font-semibold text-white">${escapeHtml(apt.from_name)}</div>
+                        <div class="text-xs text-slate-400 flex items-center space-x-2 mt-0.5">
+                            <span>📞 ${escapeHtml(apt.from_phone)}</span>
+                            ${apt.reply_to ? `<span>• ✉️ ${escapeHtml(apt.reply_to)}</span>` : ''}
+                        </div>
+                        ${apt.message ? `<div class="text-[11px] text-slate-500 italic mt-1 font-serif">"${escapeHtml(apt.message)}"</div>` : ''}
+                    </td>
+                    <td class="px-5 py-4 font-medium text-brand-300">
+                        ${escapeHtml(apt.service)}
+                    </td>
+                    <td class="px-5 py-4 text-xs text-slate-300 font-mono">
+                        ${formatDate(apt.datetime)}
+                    </td>
+                    <td class="px-5 py-4">
+                        ${getStatusBadge(apt.status)}
+                    </td>
+                    <td class="px-5 py-4 font-semibold text-slate-200">
+                        ₹${Number(apt.price || 499).toLocaleString('en-IN')}
+                    </td>
+                    <td class="px-5 py-4 text-right space-x-1">
+                        <button onclick="changeStatus('${apt.id}', 'Confirmed')" title="Confirm Appointment" class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition">
+                            <span class="iconify text-base" data-icon="heroicons:check"></span>
+                        </button>
+                        <button onclick="changeStatus('${apt.id}', 'Completed')" title="Mark Completed" class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition">
+                            <span class="iconify text-base" data-icon="heroicons:check-badge"></span>
+                        </button>
+                        <button onclick="changeStatus('${apt.id}', 'Cancelled')" title="Cancel Appointment" class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition">
+                            <span class="iconify text-base" data-icon="heroicons:x-mark"></span>
+                        </button>
+                        <button onclick="sendWhatsAppReminder('${apt.id}')" title="Send WhatsApp Message" class="p-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30 transition">
+                            <span class="iconify text-base" data-icon="simple-icons:whatsapp"></span>
+                        </button>
+                        <button onclick="deleteApt('${apt.id}')" title="Delete" class="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition">
+                            <span class="iconify text-base" data-icon="heroicons:trash"></span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Status Badge Helper
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'Confirmed':
+                    return `<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Confirmed</span>`;
+                case 'Completed':
+                    return `<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Completed</span>`;
+                case 'Cancelled':
+                    return `<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-700 text-slate-400 border border-slate-600">Cancelled</span>`;
+                default:
+                    return `<span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse">Pending</span>`;
+            }
+        }
+
+        // Status filter setter
+        function setAptFilter(status) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.className = 'filter-pill px-3 py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white';
+            });
+            const activeBtn = document.getElementById(`filter-${status}`);
+            if (activeBtn) activeBtn.className = 'filter-pill px-3 py-2 rounded-xl bg-brand-500 text-white';
+            renderAppointmentsTable();
+        }
+
+        // Change appointment status
+        async function changeStatus(id, status) {
+            await window.SalonFirebase.updateAppointmentStatus(id, status);
+            showToast('Status Updated', `Appointment marked as ${status}`);
+        }
+
+        // Delete appointment
+        async function deleteApt(id) {
+            if (confirm('Are you sure you want to delete this appointment?')) {
+                await window.SalonFirebase.deleteAppointment(id);
+                showToast('Appointment Removed', 'Record deleted from database.');
+            }
+        }
+
+        // Send WhatsApp Reminder
+        function sendWhatsAppReminder(id) {
+            const apt = allAppointments.find(a => a.id === id);
+            if (!apt) return;
+            const cleanPhone = (apt.from_phone || '').replace(/[^0-9]/g, '');
+            const msg = `Hi ${apt.from_name}! Greeting from Glamour Studio 💇‍♀️\n\nYour appointment for ${apt.service} scheduled on ${formatDate(apt.datetime)} is currently marked as *${apt.status}*.\n\nPlease let us know if you have any questions!`;
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // Services Catalog Load & Render
+        async function loadServicesCatalog() {
+            allServices = await window.SalonFirebase.getServices();
+            const grid = document.getElementById('servicesGrid');
+            const select = document.getElementById('walkInService');
+
+            grid.innerHTML = allServices.map(s => `
+                <div class="glass-card p-5 rounded-2xl flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">${escapeHtml(s.category)}</span>
+                            <span class="text-xs text-slate-400 font-mono">⏱ ${escapeHtml(s.duration || '30-60 min')}</span>
+                        </div>
+                        <h4 class="font-serif font-bold text-lg text-white mt-2">${escapeHtml(s.title)}</h4>
+                        <p class="text-2xl font-bold text-white mt-1">₹${Number(s.price).toLocaleString('en-IN')}</p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <button onclick='editService(${JSON.stringify(s)})' class="text-xs text-brand-400 hover:text-brand-300 font-semibold">Edit Price & Info</button>
+                    </div>
+                </div>
+            `).join('');
+
+            select.innerHTML = allServices.map(s => `<option value="${escapeHtml(s.title)}" data-price="${s.price}">${escapeHtml(s.title)} (₹${s.price})</option>`).join('');
+        }
+
+        // Service Modal Handlers
+        function openServiceEditModal() {
+            document.getElementById('serviceModalHeader').textContent = 'Add New Service';
+            document.getElementById('editServiceId').value = 'svc-' + Date.now();
+            document.getElementById('editServiceTitle').value = '';
+            document.getElementById('editServicePrice').value = '499';
+            document.getElementById('editServiceCategory').value = 'Hair';
+            document.getElementById('editServiceDuration').value = '30-60 min';
+            document.getElementById('serviceEditModal').classList.remove('hidden');
+        }
+
+        function editService(s) {
+            document.getElementById('serviceModalHeader').textContent = 'Edit Service';
+            document.getElementById('editServiceId').value = s.id;
+            document.getElementById('editServiceTitle').value = s.title;
+            document.getElementById('editServicePrice').value = s.price;
+            document.getElementById('editServiceCategory').value = s.category;
+            document.getElementById('editServiceDuration').value = s.duration || '30-60 min';
+            document.getElementById('serviceEditModal').classList.remove('hidden');
+        }
+
+        function closeServiceEditModal() {
+            document.getElementById('serviceEditModal').classList.add('hidden');
+        }
+
+        async function handleSaveService(e) {
+            e.preventDefault();
+            const serviceObj = {
+                id: document.getElementById('editServiceId').value,
+                title: document.getElementById('editServiceTitle').value,
+                price: Number(document.getElementById('editServicePrice').value),
+                category: document.getElementById('editServiceCategory').value,
+                duration: document.getElementById('editServiceDuration').value,
+                active: true
+            };
+            await window.SalonFirebase.saveService(serviceObj);
+            closeServiceEditModal();
+            loadServicesCatalog();
+            showToast('Service Updated', `${serviceObj.title} pricing saved.`);
+        }
+
+        // Walk-In Booking Modal
+        function openWalkInModal() {
+            document.getElementById('walkInDateTime').value = new Date().toISOString().slice(0, 16);
+            document.getElementById('walkInModal').classList.remove('hidden');
+        }
+
+        function closeWalkInModal() {
+            document.getElementById('walkInModal').classList.add('hidden');
+        }
+
+        async function handleCreateWalkIn(e) {
+            e.preventDefault();
+            const selService = document.getElementById('walkInService');
+            const selectedOpt = selService.options[selService.selectedIndex];
+            const price = selectedOpt ? selectedOpt.getAttribute('data-price') : 499;
+
+            const newApt = {
+                from_name: document.getElementById('walkInName').value,
+                from_phone: document.getElementById('walkInPhone').value,
+                reply_to: document.getElementById('walkInEmail').value,
+                service: selService.value,
+                datetime: document.getElementById('walkInDateTime').value,
+                message: document.getElementById('walkInMessage').value,
+                status: 'Confirmed',
+                price: price,
+                source: 'Walk-In / Admin'
+            };
+
+            await window.SalonFirebase.addAppointment(newApt);
+            closeWalkInModal();
+            showToast('Walk-In Added', `Confirmed booking for ${newApt.from_name}`);
+        }
+
+        // CRM Table Render
+        function renderCRMTable() {
+            const body = document.getElementById('crmBody');
+            const clients = {};
+
+            allAppointments.forEach(a => {
+                if (!a.from_phone) return;
+                if (!clients[a.from_phone]) {
+                    clients[a.from_phone] = {
+                        name: a.from_name,
+                        phone: a.from_phone,
+                        email: a.reply_to || 'N/A',
+                        visits: 1
+                    };
+                } else {
+                    clients[a.from_phone].visits++;
+                }
+            });
+
+            const clientList = Object.values(clients);
+            document.getElementById('crmCount').textContent = clientList.length;
+
+            if (clientList.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-slate-500">No client history recorded.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = clientList.map(c => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="px-5 py-3.5 font-semibold text-white">${escapeHtml(c.name)}</td>
+                    <td class="px-5 py-3.5 text-slate-300 font-mono">${escapeHtml(c.phone)}</td>
+                    <td class="px-5 py-3.5 text-slate-400 text-xs">${escapeHtml(c.email)}</td>
+                    <td class="px-5 py-3.5 font-bold text-brand-400">${c.visits} Bookings</td>
+                    <td class="px-5 py-3.5 text-right">
+                        <a href="https://wa.me/${c.phone.replace(/[^0-9]/g, '')}" target="_blank" class="px-3 py-1 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-semibold hover:bg-green-500/30 transition inline-flex items-center space-x-1">
+                            <span>WhatsApp</span>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Charts update
+        function updateCharts() {
+            const categories = {};
+            const statuses = { Pending: 0, Confirmed: 0, Completed: 0, Cancelled: 0 };
+
+            allAppointments.forEach(a => {
+                const svc = a.service || 'Other';
+                categories[svc] = (categories[svc] || 0) + 1;
+                if (statuses[a.status] !== undefined) statuses[a.status]++;
+            });
+
+            // Services Chart
+            const ctx1 = document.getElementById('servicesChart').getContext('2d');
+            if (servicesChartInst) servicesChartInst.destroy();
+            servicesChartInst = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categories),
+                    datasets: [{
+                        label: 'Bookings Count',
+                        data: Object.values(categories),
+                        backgroundColor: '#9F544A',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8', precision: 0 }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+
+            // Status Chart
+            const ctx2 = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInst) statusChartInst.destroy();
+            statusChartInst = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statuses),
+                    datasets: [{
+                        data: Object.values(statuses),
+                        backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#64748b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        // Firebase Settings Tab & Config Save
+        function loadFirebaseSettingsForm() {
+            const cfg = window.SalonFirebase.getStoredConfig();
+            if (cfg) {
+                document.getElementById('cfgApiKey').value = cfg.apiKey || '';
+                document.getElementById('cfgAuthDomain').value = cfg.authDomain || '';
+                document.getElementById('cfgProjectId').value = cfg.projectId || '';
+                document.getElementById('cfgStorageBucket').value = cfg.storageBucket || '';
+                document.getElementById('cfgAppId').value = cfg.appId || '';
+            }
+        }
+
+        function handleSaveFirebaseConfig(e) {
+            e.preventDefault();
+            const config = {
+                apiKey: document.getElementById('cfgApiKey').value.trim(),
+                authDomain: document.getElementById('cfgAuthDomain').value.trim(),
+                projectId: document.getElementById('cfgProjectId').value.trim(),
+                storageBucket: document.getElementById('cfgStorageBucket').value.trim(),
+                appId: document.getElementById('cfgAppId').value.trim()
+            };
+            window.SalonFirebase.saveConfig(config);
+            showToast('Firebase Credentials Saved', 'Reloading connection...');
+            setTimeout(() => location.reload(), 1200);
+        }
+
+        function handleClearFirebaseConfig() {
+            if (confirm('Reset to Demo Mode and clear custom Firebase keys?')) {
+                window.SalonFirebase.clearConfig();
+            }
+        }
+
+        // View Tab Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800/60';
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.className = 'nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-brand-500 bg-brand-500/10 border border-brand-500/20';
+            }
+
+            const titles = {
+                overview: 'Dashboard Overview',
+                appointments: 'Appointments Management Hub',
+                services: 'Services & Pricing Catalog',
+                customers: 'Customer CRM Directory',
+                firebase: 'Firebase Settings & Credentials'
+            };
+            document.getElementById('viewTitle').textContent = titles[tabId] || 'Admin Dashboard';
+        }
+
+        // Toast Helper
+        function showToast(title, subtitle) {
+            const toast = document.getElementById('adminToast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastSubtitle').textContent = subtitle;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+        }
+
+        // Utility formatting
+        function formatDate(dt) {
+            if (!dt) return 'N/A';
+            try {
+                const d = new Date(dt);
+                return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return dt;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function (m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+            });
+        }
+    </script>
+</body>
+
+</html>

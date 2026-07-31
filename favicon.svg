@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Dark background circle -->
+  <circle cx="32" cy="32" r="32" fill="#0A0806"/>
+  <!-- Outer ring in brand gold -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#C8834A" stroke-width="2" opacity="0.5"/>
+  <!-- Scissors icon (two blades crossing) -->
+  <!-- Left blade -->
+  <g transform="translate(32,32)">
+    <!-- Circle pivot -->
+    <circle cx="0" cy="0" r="4" fill="#C8834A"/>
+    <!-- Blade 1 (going upper-right) -->
+    <line x1="0" y1="0" x2="13" y2="-13" stroke="#C8834A" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Blade 2 (going lower-right) -->
+    <line x1="0" y1="0" x2="13" y2="13" stroke="#C8834A" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Handle 1 (going upper-left) -->
+    <path d="M0 0 Q-8 -8 -10 -15 Q-12 -18 -8 -18 Q-4 -18 -3 -14 Q-1 -8 0 0" fill="none" stroke="#C8834A" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Handle 2 (going lower-left) -->
+    <path d="M0 0 Q-8 8 -10 15 Q-12 18 -8 18 Q-4 18 -3 14 Q-1 8 0 0" fill="none" stroke="#C8834A" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>
