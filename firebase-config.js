@@ -1,24 +1,50 @@
 /**
  * Glamour Studio — Firebase Configuration & Firestore Manager
- * Handles real-time appointments, services management, and authentication.
+ * Handles real-time appointments, services management, gallery images, and authentication.
  * Falls back to LocalStorage demo store if Firebase credentials are not yet configured.
  */
 
-// Key for stored custom credentials
+// ============================================================
+// 🔥 PASTE YOUR FIREBASE PROJECT KEYS HERE
+// Get them from: Firebase Console → Project Settings → Your Apps → Web App
+// ============================================================
+window.DEFAULT_FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyCKfg8CvDaAz8awwxonKlIhMLestOZ4Rnc",
+    authDomain:        "glamour-studio-80faa.firebaseapp.com",
+    projectId:         "glamour-studio-80faa",
+    storageBucket:     "glamour-studio-80faa.firebasestorage.app",
+    messagingSenderId: "363777346781",
+    appId:             "1:363777346781:web:e7dc8a980a31cf6d541f34"
+};
+// ============================================================
+
+
+// Keys for stored custom credentials & demo data
 const STORAGE_CONFIG_KEY = 'glamour_salon_firebase_config';
 const STORAGE_DEMO_APPOINTMENTS_KEY = 'glamour_salon_appointments_demo';
 const STORAGE_DEMO_SERVICES_KEY = 'glamour_salon_services_demo';
+const STORAGE_DEMO_GALLERY_KEY = 'glamour_salon_gallery_demo';
 
-// Default initial services
+// Default initial services with prices & images
 const DEFAULT_SERVICES = [
-    { id: 'haircut', title: 'Haircut & Styling', price: 499, category: 'Hair', duration: '30-60 min', active: true },
-    { id: 'hairspa', title: 'Hair Spa & Treatment', price: 999, category: 'Hair', duration: '45-90 min', active: true },
-    { id: 'haircolor', title: 'Hair Color & Highlights', price: 2499, category: 'Hair', duration: '2-4 hrs', active: true },
-    { id: 'facial', title: 'Facial & Skin Care', price: 599, category: 'Skin', duration: '45-75 min', active: true },
-    { id: 'makeup', title: 'Party & Event Makeup', price: 2999, category: 'Makeup', duration: '60 min', active: true },
-    { id: 'bridal', title: 'Bridal Makeup Package', price: 9999, category: 'Makeup', duration: '3-4 hrs', active: true },
-    { id: 'manicure', title: 'Manicure & Pedicure', price: 899, category: 'Nails', duration: '45-90 min', active: true },
-    { id: 'waxing', title: 'Waxing & Threading', price: 499, category: 'Body', duration: '30-60 min', active: true }
+    { id: 'haircut', title: 'Haircut & Styling', price: 499, category: 'Hair', duration: '30-60 min', img: 'haircut.jpg', active: true },
+    { id: 'hairspa', title: 'Hair Spa & Treatment', price: 999, category: 'Hair', duration: '45-90 min', img: 'hair-spa.jpg', active: true },
+    { id: 'haircolor', title: 'Hair Color & Highlights', price: 2499, category: 'Hair', duration: '2-4 hrs', img: 'hair-color.jpg', active: true },
+    { id: 'facial', title: 'Facial & Skin Care', price: 599, category: 'Skin', duration: '45-75 min', img: 'facial.jpg', active: true },
+    { id: 'makeup', title: 'Party & Event Makeup', price: 2999, category: 'Makeup', duration: '60 min', img: 'makeup.jpg', active: true },
+    { id: 'bridal', title: 'Bridal Makeup Package', price: 9999, category: 'Makeup', duration: '3-4 hrs', img: 'bridal-makeup.jpg', active: true },
+    { id: 'manicure', title: 'Manicure & Pedicure', price: 899, category: 'Nails', duration: '45-90 min', img: 'manicure-pedicure.jpg', active: true },
+    { id: 'waxing', title: 'Waxing & Threading', price: 499, category: 'Body', duration: '30-60 min', img: 'waxing-threading.jpg', active: true }
+];
+
+// Default initial gallery images
+const DEFAULT_GALLERY = [
+    { id: 'gal-1', title: 'Luxury Salon Interior', category: 'Interior', url: 'interior-gallery.jpg', createdAt: new Date().toISOString() },
+    { id: 'gal-2', title: 'Precision Haircuts', category: 'Hair', url: 'haircut-gallery.jpg', createdAt: new Date().toISOString() },
+    { id: 'gal-3', title: 'Flawless Party Makeup', category: 'Makeup', url: 'makeup-gallery.jpg', createdAt: new Date().toISOString() },
+    { id: 'gal-4', title: 'Global Hair Color & Balayage', category: 'Hair', url: 'hair-color-gallery.jpg', createdAt: new Date().toISOString() },
+    { id: 'gal-5', title: 'Bridal Makeup Transformation', category: 'Bridal', url: 'bridal-makeup.jpg', createdAt: new Date().toISOString() },
+    { id: 'gal-6', title: 'Relaxing Facial Session', category: 'Skin', url: 'facial.jpg', createdAt: new Date().toISOString() }
 ];
 
 // Initial demo appointments
@@ -75,7 +101,15 @@ class SalonFirebaseManager {
         const customConfig = this.getStoredConfig();
         const configToUse = customConfig || window.DEFAULT_FIREBASE_CONFIG || null;
 
-        if (configToUse && window.firebase && window.firebase.initializeApp) {
+        // Skip if keys are still the placeholder values
+        const isPlaceholder = configToUse && (
+            configToUse.apiKey === 'YOUR_API_KEY' ||
+            configToUse.apiKey === '' ||
+            !configToUse.projectId ||
+            configToUse.projectId === 'YOUR_PROJECT_ID'
+        );
+
+        if (configToUse && !isPlaceholder && window.firebase && window.firebase.initializeApp) {
             try {
                 if (!window.firebase.apps.length) {
                     window.firebase.initializeApp(configToUse);
@@ -87,9 +121,14 @@ class SalonFirebaseManager {
             } catch (err) {
                 console.warn('⚠️ Firebase init failed, falling back to LocalStorage demo mode:', err.message);
                 this.isFirebaseReady = false;
+                this.seedDemoData();
             }
         } else {
-            console.log('ℹ️ Running in Demo / LocalStorage Mode (No Firebase keys set yet).');
+            if (isPlaceholder) {
+                console.warn('⚠️ Firebase keys are still placeholders. Please update firebase-config.js with your real project keys.');
+            } else {
+                console.log('ℹ️ Running in Demo / LocalStorage Mode (No Firebase keys set yet).');
+            }
             this.isFirebaseReady = false;
             this.seedDemoData();
         }
@@ -125,13 +164,15 @@ class SalonFirebaseManager {
         if (!localStorage.getItem(STORAGE_DEMO_SERVICES_KEY)) {
             localStorage.setItem(STORAGE_DEMO_SERVICES_KEY, JSON.stringify(DEFAULT_SERVICES));
         }
+        if (!localStorage.getItem(STORAGE_DEMO_GALLERY_KEY)) {
+            localStorage.setItem(STORAGE_DEMO_GALLERY_KEY, JSON.stringify(DEFAULT_GALLERY));
+        }
     }
 
     // -------------------------------------------------------------
     // APPOINTMENTS API
     // -------------------------------------------------------------
 
-    // Create new appointment (From website booking form or walk-in)
     async addAppointment(appointmentData) {
         const payload = {
             from_name: appointmentData.from_name || 'Guest',
@@ -168,7 +209,6 @@ class SalonFirebaseManager {
         return newApt;
     }
 
-    // Subscribe to live appointments updates
     subscribeAppointments(callback) {
         if (this.isFirebaseReady && this.db) {
             try {
@@ -188,10 +228,9 @@ class SalonFirebaseManager {
                 callback(this.getDemoAppointments());
             }
         } else {
-            // LocalStorage subscription pattern
             const handler = () => callback(this.getDemoAppointments());
             this.listeners.push(handler);
-            handler(); // Immediate execution
+            handler();
             return () => {
                 this.listeners = this.listeners.filter(l => l !== handler);
             };
@@ -207,7 +246,6 @@ class SalonFirebaseManager {
         this.listeners.forEach(fn => fn(current));
     }
 
-    // Update appointment status
     async updateAppointmentStatus(id, newStatus) {
         if (this.isFirebaseReady && this.db) {
             try {
@@ -233,7 +271,6 @@ class SalonFirebaseManager {
         return true;
     }
 
-    // Delete appointment
     async deleteAppointment(id) {
         if (this.isFirebaseReady && this.db) {
             try {
@@ -297,6 +334,62 @@ class SalonFirebaseManager {
     }
 
     // -------------------------------------------------------------
+    // GALLERY & WEBSITE MEDIA API
+    // -------------------------------------------------------------
+
+    async getGalleryImages() {
+        if (this.isFirebaseReady && this.db) {
+            try {
+                const snapshot = await this.db.collection('gallery').orderBy('createdAt', 'desc').get();
+                if (!snapshot.empty) {
+                    const images = [];
+                    snapshot.forEach(doc => images.push({ id: doc.id, ...doc.data() }));
+                    return images;
+                }
+            } catch (e) {
+                console.warn('Could not fetch gallery from Firestore, using local defaults:', e);
+            }
+        }
+        return JSON.parse(localStorage.getItem(STORAGE_DEMO_GALLERY_KEY) || JSON.stringify(DEFAULT_GALLERY));
+    }
+
+    async saveGalleryImage(imageObj) {
+        const images = await this.getGalleryImages();
+        const existingIdx = images.findIndex(img => img.id === imageObj.id);
+        if (existingIdx >= 0) {
+            images[existingIdx] = { ...images[existingIdx], ...imageObj };
+        } else {
+            images.unshift(imageObj);
+        }
+
+        localStorage.setItem(STORAGE_DEMO_GALLERY_KEY, JSON.stringify(images));
+
+        if (this.isFirebaseReady && this.db) {
+            try {
+                await this.db.collection('gallery').doc(imageObj.id).set(imageObj, { merge: true });
+            } catch (err) {
+                console.warn('Firestore gallery update warning:', err);
+            }
+        }
+        return true;
+    }
+
+    async deleteGalleryImage(id) {
+        let images = await this.getGalleryImages();
+        images = images.filter(img => img.id !== id);
+        localStorage.setItem(STORAGE_DEMO_GALLERY_KEY, JSON.stringify(images));
+
+        if (this.isFirebaseReady && this.db) {
+            try {
+                await this.db.collection('gallery').doc(id).delete();
+            } catch (err) {
+                console.warn('Firestore gallery delete warning:', err);
+            }
+        }
+        return true;
+    }
+
+    // -------------------------------------------------------------
     // AUTHENTICATION API
     // -------------------------------------------------------------
 
@@ -309,7 +402,6 @@ class SalonFirebaseManager {
                 return { success: false, error: error.message };
             }
         } else {
-            // Local Demo Authentication
             if ((email === 'admin@glamourstudio.com' && password === 'admin123') || (email && password.length >= 4)) {
                 const demoUser = { email: email, uid: 'demo-admin-uid', displayName: 'Salon Manager' };
                 localStorage.setItem('glamour_admin_logged_in', 'true');
