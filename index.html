@@ -721,46 +721,38 @@ body.loading { overflow: hidden; }
                                     Price</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="pricingTableBody">
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Basic Haircut</td>
+                                <td class="py-4 px-6 font-Regular">Haircut & Styling</td>
                                 <td class="py-4 px-6 text-right text-brand font-semibold">₹499</td>
                             </tr>
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Hair Spa</td>
+                                <td class="py-4 px-6 font-Regular">Hair Spa & Treatment</td>
                                 <td class="py-4 px-6 text-right text-brand font-semibold">₹999</td>
                             </tr>
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Hair Color (Global)</td>
+                                <td class="py-4 px-6 font-Regular">Hair Color & Highlights</td>
                                 <td class="py-4 px-6 text-right text-brand font-semibold">₹2,499</td>
                             </tr>
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Highlights / Balayage</td>
-                                <td class="py-4 px-6 text-right text-brand font-semibold">₹3,999</td>
+                                <td class="py-4 px-6 font-Regular">Facial & Skin Care</td>
+                                <td class="py-4 px-6 text-right text-brand font-semibold">₹599</td>
                             </tr>
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Facial (Classic)</td>
-                                <td class="py-4 px-6 text-right text-brand font-semibold">₹799</td>
-                            </tr>
-                            <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Facial (Gold / Diamond)</td>
-                                <td class="py-4 px-6 text-right text-brand font-semibold">₹1,499</td>
-                            </tr>
-                            <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Party Makeup</td>
+                                <td class="py-4 px-6 font-Regular">Party & Event Makeup</td>
                                 <td class="py-4 px-6 text-right text-brand font-semibold">₹2,999</td>
                             </tr>
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Bridal Package</td>
-                                <td class="py-4 px-6 text-right text-brand font-semibold">₹14,999</td>
+                                <td class="py-4 px-6 font-Regular">Bridal Makeup Package</td>
+                                <td class="py-4 px-6 text-right text-brand font-semibold">₹9,999</td>
                             </tr>
                             <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Manicure + Pedicure</td>
+                                <td class="py-4 px-6 font-Regular">Manicure & Pedicure</td>
                                 <td class="py-4 px-6 text-right text-brand font-semibold">₹899</td>
                             </tr>
                             <tr class="hover:bg-brand/[0.03] transition-colors">
-                                <td class="py-4 px-6 font-Regular">Full Body Waxing</td>
-                                <td class="py-4 px-6 text-right text-brand font-semibold">₹1,499</td>
+                                <td class="py-4 px-6 font-Regular">Waxing & Threading</td>
+                                <td class="py-4 px-6 text-right text-brand font-semibold">₹499</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2362,6 +2354,17 @@ body.loading { overflow: hidden; }
                             if (svc.img) serviceData[svc.id].img = svc.img;
                         }
                     });
+
+                    // Render dynamic pricing table on customer website
+                    const pricingBody = document.getElementById('pricingTableBody');
+                    if (pricingBody) {
+                        pricingBody.innerHTML = services.map(svc => `
+                            <tr class="border-b border-white/5 hover:bg-brand/[0.03] transition-colors">
+                                <td class="py-4 px-6 font-Regular">${svc.title}</td>
+                                <td class="py-4 px-6 text-right text-brand font-semibold">₹${Number(svc.price).toLocaleString('en-IN')}</td>
+                            </tr>
+                        `).join('');
+                    }
                 }
             } catch (e) {
                 console.warn('Sync services notice:', e);
